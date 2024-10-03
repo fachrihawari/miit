@@ -16,7 +16,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "Miit Call",
-  description: "A Video Call app using Next.js, Firebase and WebRTC",
+  description: "Premium video meetings. Now free for everyone.",
 };
 
 export default function RootLayout({
