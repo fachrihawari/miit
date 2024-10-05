@@ -10,11 +10,8 @@ type PageProps = {
 export default function Page({ params }: PageProps) {
   const [joined, setJoined] = useState(false);
 
-  const handleJoin = ({ name, isVideoOn, isAudioOn }: { name: string, isVideoOn: boolean, isAudioOn: boolean }) => {
-    console.log('handleJoin', name, isVideoOn, isAudioOn)
+  const handleJoin = (name: string) => {
     localStorage.setItem('name', name)
-    localStorage.setItem('isVideoOn', isVideoOn.toString())
-    localStorage.setItem('isAudioOn', isAudioOn.toString())
     setJoined(true)
   }
 
