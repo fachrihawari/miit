@@ -1,7 +1,8 @@
 import { emitter } from "@/lib/events/emitter";
 import { EVENTS } from "@/lib/events/constants";
-import { NextResponse } from "next/server";
+import { buildEvent } from "@/lib/sse";
 import { randomUUID } from 'node:crypto'
+import { NextResponse } from "next/server";
 
 export async function POST() {
   emitter.emit(EVENTS.USER_JOINED, randomUUID(), new Date());
@@ -10,24 +11,22 @@ export async function POST() {
 
 export async function GET(req: Request) {
   const responseStream = new TransformStream();
-  const encoder = new TextEncoder();
   const writer = responseStream.writable.getWriter();
 
   req.signal.onabort = () => {
-    console.log('abort');
+    console.log('SSE connection abroted!');
     writer.close();
   };
 
   // Ping to open connection
-  writer.write(encoder.encode(`event: ping\n\n`))
+  writer.write(buildEvent(EVENTS.PING))
 
+  // Broadcast user joined event
   emitter.on(EVENTS.USER_JOINED, (userId, createdAt) => {
-    console.log('user joined', userId, createdAt);
-    writer.write(encoder.encode(`event: ${EVENTS.USER_JOINED}\n`))
-    writer.write(encoder.encode(`data: ${JSON.stringify({ userId, createdAt })}\n\n`));
+    writer.write(buildEvent(EVENTS.USER_JOINED, { userId, createdAt }))
   })
 
-  return new Response(responseStream.readable, {
+  return new NextResponse(responseStream.readable, {
     headers: {
       "Content-Type": "text/event-stream; charset=utf-8",
       "Connection": "keep-alive",

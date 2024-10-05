@@ -1,32 +1,25 @@
 'use client'
-import { EVENTS } from "@/lib/events/constants";
-import { useEffect, useState } from "react"
+import { useState } from "react";
+import PreJoin from "./componets/pre-join";
+import Call from "./componets/call";
 
-export default function RoomPage() {
-  const [date, setDate] = useState<string>("");
+type PageProps = {
+  params: { code: string }
+}
 
-  useEffect(() => {
-    const eventSource = new EventSource('/api/sse');
+export default function Page({ params }: PageProps) {
+  const [joined, setJoined] = useState(false);
 
-    eventSource.onopen = () => {
-      console.log('open');
-    }
-    eventSource.onerror = (event) => {
-      console.log('error', event);
-    }
+  const handleJoin = ({ name, isVideoOn, isAudioOn }: { name: string, isVideoOn: boolean, isAudioOn: boolean }) => {
+    console.log('handleJoin', name, isVideoOn, isAudioOn)
+    localStorage.setItem('name', name)
+    localStorage.setItem('isVideoOn', isVideoOn.toString())
+    localStorage.setItem('isAudioOn', isAudioOn.toString())
+    setJoined(true)
+  }
 
-    const userJoined =  (event: MessageEvent<string>) => {
-      const data = JSON.parse(event.data) as { userId: string, createdAt: string }
-      console.log(EVENTS.USER_JOINED, data)
-      setDate(data.createdAt)
-    }
-    eventSource.addEventListener(EVENTS.USER_JOINED, userJoined)
-
-    return () => {
-      eventSource.removeEventListener(EVENTS.USER_JOINED, userJoined)
-      eventSource.close();
-      console.log(eventSource)
-    };
-  }, []);
-  return <div>Date: {date}</div>
+  if (!joined) {
+    return <PreJoin code={params.code} onJoin={handleJoin} />
+  }
+  return <Call />
 }

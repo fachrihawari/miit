@@ -1,18 +1,6 @@
-import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  display: 'swap',
-  variable: "--font-geist-sans"
-});
-
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  display: 'swap',
-  variable: "--font-geist-mono"
-});
+import type { Metadata } from "next";
+import { geistMono, geistSans } from "@/lib/fonts/fonts";
 
 export const metadata: Metadata = {
   title: "Miit Call",
