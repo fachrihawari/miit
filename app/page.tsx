@@ -1,17 +1,21 @@
 import Image from "next/image";
+import { cookies } from "next/headers";
 import { TfiPlus } from "react-icons/tfi";
-import Navbar from "@/components/Navbar";
-import { createRoom, joinRoom } from "./actions";
+import { createRoom } from "./actions";
+import Navbar from "@/components/navbar";
+import JoinRoom from "@/components/join-room";
 
-export default async function Home() {
+export default function Page() {
+  const username = cookies().get('username')! // it's guaranteed to be here by the middleware
+  
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Navbar />
-      <main className="flex-grow container mx-auto px-4 flex items-center">
+      <main className="flex-grow container mx-auto px-4 xl:px-0 flex items-center">
         <div className="mx-auto flex flex-col-reverse lg:flex-row items-center justify-between">
           <div className="w-full lg:w-4/7 xl:w-1/2 mb-8">
-            <h1 className="text-4xl font-normal mb-4 text-gray-900">Premium video meetings. Now free for everyone.</h1>
-            <p className="text-lg mb-8 text-gray-700">We re-engineered the service we built for secure business meetings, Miit, to make it free and available for all.</p>
+            <h1 className="text-4xl font-normal mb-4 text-gray-900">Welcome to Miit, {username.value}!</h1>
+            <p className="text-lg mb-8 text-gray-700">Experience seamless, high-quality video meetings with Miit, now accessible to everyone, completely free.</p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
               <form action={createRoom}>
                 <button className="bg-blue-600 w-full hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md flex items-center transition duration-200">
@@ -19,19 +23,7 @@ export default async function Home() {
                   New meeting
                 </button>
               </form>
-              <form action={joinRoom}>
-                <div className="flex w-full sm:w-auto">
-                  <input
-                    type="text"
-                    placeholder="Enter a code or link"
-                    name="code"
-                    className="flex-grow border border-gray-300 rounded-l-md py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <button className="bg-gray-50 hover:bg-gray-100 text-gray-800 font-medium py-3 px-6 rounded-r-md border border-gray-300 border-l-0 transition duration-200">
-                    Join
-                  </button>
-                </div>
-              </form>
+              <JoinRoom />
             </div>
           </div>
           <div className="w-full md:w-4/5 lg:w-3/7 xl:w-1/2 flex justify-center mb-12 lg:mb-0 lg:justify-end">
@@ -49,5 +41,5 @@ export default async function Home() {
         </div>
       </main>
     </div>
-  )
+  );
 }

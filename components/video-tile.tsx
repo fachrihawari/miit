@@ -1,13 +1,13 @@
 import { FaVideoSlash, FaMicrophoneSlash } from "react-icons/fa"
 
 type VideoTileProps = {
-  name: string
-  isVideoOn: boolean
-  isAudioOn: boolean
+  username: string
+  isVideoOn?: boolean
+  isAudioOn?: boolean
   videoRef: React.RefObject<HTMLVideoElement>
-  isLoading: boolean
+  isLoading?: boolean
 }
-export default function VideoTile({ name, isVideoOn, isAudioOn, videoRef, isLoading }: VideoTileProps) {
+export default function VideoTile({ username, isVideoOn = true, isAudioOn = true, videoRef, isLoading = false }: VideoTileProps) {
   return (
     <div className="relative h-48 bg-black rounded-md overflow-hidden w-full">
       {isVideoOn && (
@@ -21,7 +21,7 @@ export default function VideoTile({ name, isVideoOn, isAudioOn, videoRef, isLoad
       {
         !isVideoOn && (
           <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
-            <p className="text-white text-2xl font-bold mb-4">{name}</p>
+            <p className="text-white text-2xl font-bold mb-4">{username}</p>
             <div className="flex gap-4">
               <FaVideoSlash size={24} className="text-gray-400" />
               {!isAudioOn && (
