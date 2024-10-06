@@ -1,7 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { FaUser, FaVideo, FaMicrophone, FaVideoSlash, FaMicrophoneSlash, FaCheck, FaCopy } from 'react-icons/fa';
+import { useState, useEffect, useCallback } from 'react';
+import { FaUser } from 'react-icons/fa';
+import VideoTile from './video-tile';
+import MeetingCode from './meeting-code';
+import MeetingControls from './meeting-controls';
+import useMediaStream from './use-media-stream';
 
 type PreJoinProps = {
   onJoin: (name: string) => void
@@ -47,7 +51,7 @@ function PreJoin({ onJoin, code }: PreJoinProps) {
         </div>
 
         {/* Video preview */}
-        <VideoPreview name={name} isAudioOn={isAudioOn} isVideoOn={isVideoOn} videoRef={videoRef} isLoading={isLoading} />
+        <VideoTile name={name} isAudioOn={isAudioOn} isVideoOn={isVideoOn} videoRef={videoRef} isLoading={isLoading} />
 
         {/* Media control buttons */}
         <MeetingControls error={error} setIsVideoOn={setIsVideoOn} isVideoOn={isVideoOn} isLoading={isLoading} setIsAudioOn={setIsAudioOn} isAudioOn={isAudioOn} />
@@ -67,203 +71,3 @@ function PreJoin({ onJoin, code }: PreJoinProps) {
 
 export default PreJoin;
 
-type VideoPreviewProps = {
-  name: string
-  isVideoOn: boolean
-  isAudioOn: boolean
-  videoRef: React.RefObject<HTMLVideoElement>
-  isLoading: boolean
-}
-function VideoPreview({ name, isVideoOn, isAudioOn, videoRef, isLoading }: VideoPreviewProps) {
-  return (
-    <div className="mb-6">
-      <div className="relative w-full h-48 bg-black rounded-md overflow-hidden">
-
-        {isVideoOn && (
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            className="absolute top-0 left-0 w-full h-full object-cover" />
-        )}
-        {
-          !isVideoOn && (
-            <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
-              <p className="text-white text-2xl font-bold mb-4">{name}</p>
-              <div className="flex gap-4">
-                <FaVideoSlash size={24} className="text-gray-400" />
-                {!isAudioOn && (
-                  <FaMicrophoneSlash size={24} className="text-gray-400" />
-                )}
-              </div>
-            </div>
-          )
-        }
-
-        {isVideoOn && !isAudioOn && (
-          <div className="absolute top-2 right-2 bg-gray-500/50 rounded-full p-2">
-            <FaMicrophoneSlash size={18} className="text-white" />
-          </div>
-        )}
-
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-type MeetingControlsProps = {
-  isVideoOn: boolean
-  setIsVideoOn: React.Dispatch<React.SetStateAction<boolean>>
-  isAudioOn: boolean
-  setIsAudioOn: React.Dispatch<React.SetStateAction<boolean>>
-  isLoading: boolean
-  error: string
-}
-function MeetingControls({ error, setIsVideoOn, isVideoOn, isLoading, setIsAudioOn, isAudioOn }: MeetingControlsProps) {
-  return (
-    <>
-      <div className="flex justify-center space-x-4 mb-6">
-        <button
-          onClick={() => setIsVideoOn(prev => !prev)}
-          className={`p-3 rounded-full ${!isVideoOn ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-          aria-label={isVideoOn ? "Turn off video" : "Turn on video"}
-          disabled={isLoading}
-        >
-          {isVideoOn ? <FaVideo size={20} /> : <FaVideoSlash size={20} />}
-        </button>
-        <button
-          onClick={() => setIsAudioOn(prev => !prev)}
-          className={`p-3 rounded-full ${!isAudioOn ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-          aria-label={isAudioOn ? "Turn off microphone" : "Turn on microphone"}
-          disabled={isLoading}
-        >
-          {isAudioOn ? <FaMicrophone size={20} /> : <FaMicrophoneSlash size={20} />}
-        </button>
-      </div>
-      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-    </>
-  )
-}
-
-
-type MeetingCodeProps = {
-  code: string
-}
-function MeetingCode({ code }: MeetingCodeProps) {
-  const [isCopied, setIsCopied] = useState(false);
-
-  const copyCode = useCallback(() => {
-    navigator.clipboard.writeText(code);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  }, [code]);
-
-  return (
-    <div className="mb-6 bg-gray-100 p-4 rounded-md">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-600 mb-1">Meeting Code:</p>
-          <p className="text-lg font-semibold">{code}</p>
-        </div>
-        <button
-          onClick={copyCode}
-          className={`p-2 ${isCopied ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-md  transition duration-200`}
-          aria-label={isCopied ? "Code copied" : "Copy meeting code"}
-        >
-          {isCopied ? <FaCheck size={16} /> : <FaCopy size={16} />}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-
-function useMediaStream() {
-  // State for user input and media settings
-  const [isVideoOn, setIsVideoOn] = useState(false);
-  const [isAudioOn, setIsAudioOn] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Refs for managing media streams
-  const streamRef = useRef<MediaStream | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  const stopStream = useCallback((kind: 'video' | 'audio' | 'all') => {
-    if (streamRef.current) {
-      for (const track of streamRef.current.getTracks()) {
-        if (track.kind === kind || kind === 'all') {
-          track.stop();
-          streamRef.current!.removeTrack(track);
-        }
-      }
-    }
-    if ((kind === 'all' || kind === 'video') && videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  }, []);
-
-  const startStream = useCallback(async (kind: 'video' | 'audio') => {
-    setError('');
-
-    if (kind === 'video') {
-      setIsLoading(true);
-    }
-
-    try {
-      const constraints = kind === 'video' ? { video: true } : { audio: true };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-      if (streamRef.current) {
-        for (const track of stream.getTracks()) {
-          streamRef.current.addTrack(track);
-        }
-      } else {
-        streamRef.current = stream;
-      }
-
-      if (kind === 'video' && videoRef.current) {
-        videoRef.current.srcObject = streamRef.current;
-      }
-    } catch (error) {
-      console.error(`Error accessing ${kind} device:`, error);
-      setError(`Unable to access ${kind} device. Please check your permissions.`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-
-  // Effect to manage video stream
-  useEffect(() => {
-    if (isVideoOn) {
-      startStream('video');
-    } else {
-      stopStream('video');
-    }
-  }, [isVideoOn, startStream, stopStream]);
-
-  // Effect to manage audio stream
-  useEffect(() => {
-    if (isAudioOn) {
-      startStream('audio');
-    } else {
-      stopStream('audio');
-    }
-  }, [isAudioOn, startStream, stopStream]);
-
-  // Cleanup effect to stop all streams when component unmounts
-  useEffect(() => {
-    return () => {
-      stopStream('all');
-    };
-  }, [stopStream]);
-
-  return { isVideoOn, setIsVideoOn, isAudioOn, setIsAudioOn, error, isLoading, streamRef, videoRef, stopStream, startStream };
-}

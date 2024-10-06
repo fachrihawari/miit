@@ -18,5 +18,5 @@ export default function Page({ params }: PageProps) {
   if (!joined) {
     return <PreJoin code={params.code} onJoin={handleJoin} />
   }
-  return <Call />
+  return <Call code={params.code} />
 }
