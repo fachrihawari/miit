@@ -22,7 +22,9 @@ export async function leaveRoom() {
 
 export async function createRoom() {
     const code = nanoid()
-    await roomsCollection.insertOne({ code, createdAt: new Date(), offerCandidates: [], answerCandidates: [] })
+    const username = cookies().get('username')!.value // guaranteed by middleware
+    await roomsCollection.insertOne({ createdBy: username, code, createdAt: new Date(), offerCandidates: [], answerCandidates: [] })
+    cookies().set('joined', code)
     redirect('/' + code)
 }
 
@@ -44,7 +46,6 @@ export async function addAnswerCandidates(code: string, candidate: RTCIceCandida
 
 export async function goToPreJoin(_: string, formData: FormData) {
     await new Promise(resolve => setTimeout(resolve, 500))
-
 
     const code = formData.get('code') ?? ''
     if (!code) {

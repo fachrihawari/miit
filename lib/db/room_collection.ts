@@ -15,6 +15,7 @@ const OfferAnswerSchema = z.object({
 
 export const RoomSchema = z.object({
   code: z.string(),
+  createdBy: z.string(),
   offer: OfferAnswerSchema.optional(),
   answer: OfferAnswerSchema.optional(),
   offerCandidates: z.array(CandidateSchema).default([]),
