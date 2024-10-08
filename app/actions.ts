@@ -11,12 +11,25 @@ export async function onboarding(formData: FormData) {
     redirect('/')
 }
 
+export async function getRoom(code: string) {
+    return await roomsCollection.findOne({ code })
+}
+
 export async function joinRoom(code: string) {
     cookies().set('joined', code)
+
+    const room = await getRoom(code)
+    if (!room) {
+        return 'Room is not exists'
+    }
+    if (room.createdBy === await getCookieValue('username')) {
+        cookies().set('host', code)
+    }
 }
 
 export async function leaveRoom() {
     cookies().delete('joined')
+    cookies().delete('host')
     redirect('/')
 }   
 
@@ -52,10 +65,17 @@ export async function goToPreJoin(_: string, formData: FormData) {
         return 'Room code is required'
     }
 
-    const roomExists = await roomsCollection.findOne({ code })
+    const roomExists = await getRoom(code.toString())
     if (!roomExists) {
         return 'Room is not exists'
     }
 
     redirect('/' + code)
+}
+
+export async function getCookieValue(cookieName: string) {
+    if (cookies().has(cookieName)) {
+        return cookies().get(cookieName)!.value
+    }
+    return ''
 }

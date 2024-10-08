@@ -4,13 +4,13 @@ import VideoTile from './video-tile';
 import MeetingCode from './meeting-code';
 import MeetingControls from './meeting-controls';
 import useMediaStream from '../hooks/use-media-stream';
-import { joinRoom } from '@/app/actions';
 
 type PreJoinProps = {
   code: string
   username: string
+  onJoin: () => void
 }
-function PreJoin({ code, username }: PreJoinProps) {
+function PreJoin({ code, username, onJoin }: PreJoinProps) {
   const { isVideoOn, setIsVideoOn, isAudioOn, setIsAudioOn, error, isLoading, videoRef } = useMediaStream();
 
   return (
@@ -31,7 +31,7 @@ function PreJoin({ code, username }: PreJoinProps) {
 
         {/* Join meeting button */}
         <button
-          onClick={() => joinRoom(code)}
+          onClick={onJoin}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 disabled:bg-gray-400 disabled:text-gray-50 disabled:cursor-not-allowed"
         >
           Join Meeting
