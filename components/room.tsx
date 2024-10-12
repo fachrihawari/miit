@@ -42,53 +42,98 @@ export default function Room(props: RoomProps) {
   // Media stream
   const { start, stop, muteAudio, muteVideo, unmuteAudio, unmuteVideo, isStreaming, stream, isAudioMuted, isVideoMuted } = useMediaStream()
 
+  // STEP 1: Start Media Stream & Setup Peer Connection
+  // WebRTC needs a media stream/data channel to work
   useEffect(() => {
+    // Start Media Stream
     start()
+
+    // Setup Peer Connection
+    pcRef.current = new RTCPeerConnection(servers)
+    pcRef.current.onicecandidate = (event) => {
+      console.log("event", event.candidate)
+    }
+
     return () => {
       stop()
+      pcRef.current?.close()
     }
   }, [])
 
+  // STEP 2: Add local media tracks to peer connection and join the room
+  // this is called when the media stream is available with isStreaming is true
   useEffect(() => {
-    if (isStreaming && !isVideoMuted && videoRefs.current[username]?.current) {
+    if (isStreaming) {
+      // If peer connection exists and we have a media stream
+      if (pcRef.current && stream) {
+        // Add each track from our local stream to the peer connection
+        stream.getTracks().forEach((track) => {
+          console.log("adding track", track)
+          pcRef.current!.addTrack(track, stream)
+        })
+      }
+
+      // Join current user to the room by sending a JOIN_ROOM event
+      sendEvent(EVENTS.JOIN_ROOM, { code })
+    }
+  }, [isStreaming]);
+
+  useEffect(() => {
+    if (videoRefs.current[username]?.current) {
       videoRefs.current[username].current.srcObject = stream;
     }
-  }, [isStreaming, isVideoMuted]);
+  }, [participants])
 
-
+  // STEP 3: Setup Server-Sent Events (SSE) for real-time communication
   useEffect(() => {
-    pcRef.current = new RTCPeerConnection(servers)
-
+    // Create an EventSource for SSE connection
     const eventSource = new EventSource(`/api/sse?code=${code}`)
     eventSource.onopen = (event) => console.log("SSE connected", event)
     eventSource.onerror = (event) => console.log("SSE disconnected", event)
 
-    // Setup a listener for join room events
+    // Handle JOIN_ROOM event
     const handleJoinRoomEvent = async (event: MessageEvent) => {
       const data = JSON.parse(event.data) as JoinRoomEventData
+
+      // Create a new video reference for the joined user if it doesn't exist
       if (!videoRefs.current[data.userJoined]?.current) {
         videoRefs.current[data.userJoined] = createRef()
       }
+
+      // If the current user joined, create and set a local offer
+      if (data.userJoined === username) {
+        const offer = await pcRef.current?.createOffer()
+        await pcRef.current?.setLocalDescription(offer)
+        console.log("offer", offer)
+      }
+
+      // Update the list of participants
       setParticipants(data.users)
     }
+
+    // Handle LEAVE_ROOM event
     const handleLeaveRoomEvent = (event: MessageEvent) => {
       const data = JSON.parse(event.data) as LeaveRoomEventData
+
+      // Remove the video reference for the user who left
       delete videoRefs.current[data.userLeft]
+
+      // Update the list of participants
       setParticipants(data.users)
     }
+
+    // Add event listeners for JOIN_ROOM and LEAVE_ROOM events
     eventSource.addEventListener(EVENTS.JOIN_ROOM, handleJoinRoomEvent)
     eventSource.addEventListener(EVENTS.LEAVE_ROOM, handleLeaveRoomEvent)
 
-    // Join current user to the room
-    sendEvent(EVENTS.JOIN_ROOM, { code })
-
     return () => {
+      // Send a LEAVE_ROOM event when the component unmounts
       sendEvent(EVENTS.LEAVE_ROOM, { code })
+
+      // Remove event listeners and close the SSE connection
       eventSource.removeEventListener(EVENTS.JOIN_ROOM, handleJoinRoomEvent)
       eventSource.removeEventListener(EVENTS.LEAVE_ROOM, handleLeaveRoomEvent)
       eventSource.close()
-
-      pcRef.current?.close()
     }
   }, [code])
 

@@ -34,6 +34,7 @@ export async function onboarding(formData: FormData) {
     path: '/',
     sameSite: 'strict',
     priority: 'high',
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 days
     secure: process.env.NODE_ENV !== 'development',
   })
   redirect('/')
