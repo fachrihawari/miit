@@ -1,4 +1,4 @@
-import { FaVideo, FaVideoSlash, FaMicrophone, FaMicrophoneSlash, FaPhoneSlash } from "react-icons/fa"
+import { FaVideo, FaVideoSlash, FaMicrophone, FaMicrophoneSlash, FaPhone } from "react-icons/fa"
 
 type MeetingControlsProps = {
   isVideoOn: boolean
@@ -27,7 +27,7 @@ export default function MeetingControls({ isVideoOn, isAudioOn, toggleAudio, tog
 
       {hangupCall && (
         <button onClick={hangupCall} className="bg-red-500 text-white p-3 rounded-full">
-          <FaPhoneSlash size={20} />
+          <FaPhone size={20} />
         </button>
       )}
     </div>

@@ -1,13 +1,14 @@
 'use client'
 
 import { useRouter } from "next/navigation"
-import { MutableRefObject, useEffect, useRef, useState } from "react"
+import { createRef, RefObject, useEffect, useRef, useState } from "react"
 import { sendEvent } from "@/app/actions"
 import MeetingControls from "@/components/meeting-controls"
 import VideoTile from "@/components/video-tile"
 import { EVENTS } from "@/lib/events/constants"
 import { JoinRoomEventData, LeaveRoomEventData } from "../app/[code]/types"
 import { getCookie } from "@/lib/cookie"
+import useMediaStream from "use-media-stream"
 
 type RoomProps = {
   code: string
@@ -29,11 +30,31 @@ const servers: RTCConfiguration = {
 export default function Room(props: RoomProps) {
   const { code } = props
   const router = useRouter()
-  const [participants, setParticipants] = useState<string[]>([])
-  const videoRefs = useRef<Record<string, MutableRefObject<HTMLVideoElement>>>({})
-  const username = getCookie('username')
+
+  // Refs
+  const videoRefs = useRef<Record<string, RefObject<HTMLVideoElement> | undefined>>({})
   const pcRef = useRef<RTCPeerConnection | null>(null)
-  const otherParticipants = participants.filter(participant => participant !== username)
+
+  // Participants in the room
+  const username = getCookie('username')
+  const [participants, setParticipants] = useState<string[]>([])
+
+  // Media stream
+  const { start, stop, muteAudio, muteVideo, unmuteAudio, unmuteVideo, isStreaming, stream, isAudioMuted, isVideoMuted } = useMediaStream()
+
+  useEffect(() => {
+    start()
+    return () => {
+      stop()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isStreaming && !isVideoMuted && videoRefs.current[username]?.current) {
+      videoRefs.current[username].current.srcObject = stream;
+    }
+  }, [isStreaming, isVideoMuted]);
+
 
   useEffect(() => {
     pcRef.current = new RTCPeerConnection(servers)
@@ -45,12 +66,14 @@ export default function Room(props: RoomProps) {
     // Setup a listener for join room events
     const handleJoinRoomEvent = async (event: MessageEvent) => {
       const data = JSON.parse(event.data) as JoinRoomEventData
-      console.log(data.userJoined, "joined")
+      if (!videoRefs.current[data.userJoined]?.current) {
+        videoRefs.current[data.userJoined] = createRef()
+      }
       setParticipants(data.users)
     }
     const handleLeaveRoomEvent = (event: MessageEvent) => {
       const data = JSON.parse(event.data) as LeaveRoomEventData
-      console.log(data.userLeft, "left")
+      delete videoRefs.current[data.userLeft]
       setParticipants(data.users)
     }
     eventSource.addEventListener(EVENTS.JOIN_ROOM, handleJoinRoomEvent)
@@ -74,55 +97,31 @@ export default function Room(props: RoomProps) {
     router.push("/")
   }
 
-  let content = null
-  if (otherParticipants.length === 0) {
-    content = (
-      <VideoTile
-        username={username}
-        videoRef={videoRefs.current[username]}
-        isVideoOn={false}
-        isAudioOn={false}
-        fullScreen
-      />
-    )
-  } else if (otherParticipants.length === 1) {
-    const opponent = otherParticipants[0]
-    content = (
-      <>
-        <VideoTile
-          username={opponent}
-          videoRef={videoRefs.current[opponent]}
-          isVideoOn={false}
-          isAudioOn={false}
-          fullScreen
-        />
-
-        <div className="absolute top-4 right-4">
-          <VideoTile
-            username={username}
-            videoRef={videoRefs.current[username]}
-            isVideoOn={false}
-            isAudioOn={false}
-          />
-        </div>
-      </>
-    )
-  } else {
-    content = participants.map((participant, index) => (
-      <VideoTile
-        key={index}
-        username={participant}
-        videoRef={videoRefs.current[participant]}
-        isVideoOn={false}
-        isAudioOn={false}
-      />
-    ))
-  }
-
   return (
     <div className="flex flex-col h-screen bg-white">
-      <div className={`flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${otherParticipants.length <= 1 ? 'p-0' : 'p-4'}`}>
-        {content}
+      <div className={`flex-1 relative grid grid-cols-3 grid-rows-3 gap-4 ${participants.length <= 2 ? '' : 'p-4'}`}>
+        {participants.map((participant) => {
+          let className = ''
+          const fullScreenClassName = 'col-span-3 row-span-3'
+          if (participants.length === 1) {
+            className = fullScreenClassName
+          } else if (participants.length === 2) {
+            className = participant === username ?
+              'absolute rounded-lg top-4 right-4 w-80 h-1/4 z-10' :
+              fullScreenClassName
+          }
+
+          return (
+            <VideoTile
+              key={participant}
+              username={participant}
+              videoRef={videoRefs.current[participant]}
+              isVideoOn={participant === username ? !isVideoMuted : false}
+              isAudioOn={participant === username ? !isAudioMuted : false}
+              className={className}
+            />
+          )
+        })}
 
         {participants.length === 0 && (
           <div className="col-span-full flex items-center justify-center h-full">
@@ -131,10 +130,10 @@ export default function Room(props: RoomProps) {
         )}
       </div>
       <MeetingControls
-        isVideoOn={false}
-        isAudioOn={false}
-        toggleAudio={() => { }}
-        toggleVideo={() => { }}
+        isVideoOn={!isVideoMuted}
+        isAudioOn={!isAudioMuted}
+        toggleAudio={isAudioMuted ? unmuteAudio : muteAudio}
+        toggleVideo={isVideoMuted ? unmuteVideo : muteVideo}
         hangupCall={hangupCall}
       />
     </div>
