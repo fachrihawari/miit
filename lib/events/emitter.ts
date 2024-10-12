@@ -2,10 +2,11 @@ import { EventEmitter } from "node:events";
 import { EVENTS } from "./constants";
 import nanoid from "../nanoid";
 
-type EventMap = {
-  [EVENTS.PING]: [unknown],
-  [EVENTS.JOIN_ROOM]: [{ username: string, code: string }],
-  [EVENTS.LEAVE_ROOM]: [{ username: string, code: string }],
+export type EventMap = {
+  [EVENTS.JOIN_ROOM]: [data: { code: string }, username: string],
+  [EVENTS.LEAVE_ROOM]: [data: { code: string }, username: string],
+  [EVENTS.CREATE_OFFER]: [data: { code: string, offer: RTCSessionDescriptionInit }, username: string],
+  [EVENTS.CREATE_ANSWER]: [data: { code: string, answer: RTCSessionDescriptionInit }, username: string],
 };
 
 export const emitter = new EventEmitter<EventMap>();

@@ -1,4 +1,3 @@
-
 React:
 - please create a type for the props
 - please don't destructure the props directly in the components

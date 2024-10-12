@@ -5,11 +5,11 @@ type MeetingControlsProps = {
   isAudioOn: boolean
   toggleAudio: () => void
   toggleVideo: () => void
-  leaveCall?: () => void
+  hangupCall?: () => void
 }
-export default function MeetingControls({ isVideoOn, isAudioOn, toggleAudio, toggleVideo, leaveCall }: MeetingControlsProps) {
+export default function MeetingControls({ isVideoOn, isAudioOn, toggleAudio, toggleVideo, hangupCall }: MeetingControlsProps) {
   return (
-    <div className="flex justify-center items-center space-x-4 py-8">
+    <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center space-x-4 py-8">
       <button
         onClick={toggleVideo}
         className={`p-3 rounded-full ${!isVideoOn ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-600'}`}
@@ -25,8 +25,8 @@ export default function MeetingControls({ isVideoOn, isAudioOn, toggleAudio, tog
         {isAudioOn ? <FaMicrophone size={20} /> : <FaMicrophoneSlash size={20} />}
       </button>
 
-      {leaveCall && (
-        <button onClick={leaveCall} className="bg-red-500 text-white p-3 rounded-full">
+      {hangupCall && (
+        <button onClick={hangupCall} className="bg-red-500 text-white p-3 rounded-full">
           <FaPhoneSlash size={20} />
         </button>
       )}

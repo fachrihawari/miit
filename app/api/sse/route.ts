@@ -3,9 +3,14 @@ import { EVENTS } from "@/lib/events/constants";
 import { eventBuilder } from "@/lib/events/emitter";
 import { NextResponse } from "next/server";
 import { getRoomUsers, addUserToRoom, removeUserFromRoom } from "@/lib/cache";
+import { cookies } from "next/headers";
+
 export async function POST(req: Request) {
   const { name, data } = await req.json()
-  emitter.emit(name, data)
+  const username = cookies().get('username')
+  if (!username) return
+
+  emitter.emit(name, data, username.value)
 }
 
 export async function GET(req: Request) {
@@ -21,7 +26,7 @@ export async function GET(req: Request) {
   };
 
   // Broadcast user joined event
-  emitter.on(EVENTS.JOIN_ROOM, ({ username, code }) => {
+  emitter.on(EVENTS.JOIN_ROOM, ({ code }, username) => {
     if (roomCode !== code) return
 
     // Update room users cache
@@ -32,7 +37,7 @@ export async function GET(req: Request) {
   })
 
   // Broadcast user left event
-  emitter.on(EVENTS.LEAVE_ROOM, ({ username, code }) => {
+  emitter.on(EVENTS.LEAVE_ROOM, ({ code }, username) => {
     if (roomCode !== code) return
 
     // Update room users cache
@@ -46,7 +51,8 @@ export async function GET(req: Request) {
     headers: {
       "Content-Type": "text/event-stream; charset=utf-8",
       "Connection": "keep-alive",
-      "Cache-Control": "no-cache, no-transform"
+      "Cache-Control": "no-cache, no-transform",
+      Cookie: cookies().toString(),
     },
   });
 }

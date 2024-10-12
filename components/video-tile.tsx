@@ -6,10 +6,11 @@ type VideoTileProps = {
   isAudioOn?: boolean
   videoRef: React.RefObject<HTMLVideoElement>
   isLoading?: boolean
+  fullScreen?: boolean
 }
-export default function VideoTile({ username, isVideoOn = false, isAudioOn = false, videoRef, isLoading = false }: VideoTileProps) {
+export default function VideoTile({ fullScreen = false, username, isVideoOn = false, isAudioOn = false, videoRef, isLoading = false }: VideoTileProps) {
   return (
-    <div className="relative h-48 bg-black rounded-md overflow-hidden w-full">
+    <div className={`relative ${fullScreen ? 'col-span-full' : 'w-80 h-48 bg-gray-600 rounded-md'} bg-black overflow-hidden`}>
       {isVideoOn && (
         <video
           ref={videoRef}
@@ -20,7 +21,7 @@ export default function VideoTile({ username, isVideoOn = false, isAudioOn = fal
       )}
       {
         !isVideoOn && (
-          <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
+          <div className={`absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center`}>
             <p className="text-white text-2xl font-bold mb-4">{username}</p>
             <div className="flex gap-4">
               <FaVideoSlash size={24} className="text-gray-400" />
