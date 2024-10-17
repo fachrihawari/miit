@@ -82,7 +82,7 @@ export default function Room(props: RoomProps) {
     if (videoRefs.current[username]?.current) {
       videoRefs.current[username].current.srcObject = stream;
     }
-  }, [participants])
+  }, [participants, isVideoMuted])
 
   // STEP 3: Setup Server-Sent Events (SSE) for real-time communication
   useEffect(() => {
