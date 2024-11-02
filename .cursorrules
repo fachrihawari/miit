@@ -1,4 +1,0 @@
-React:
-- please create a type for the props
-- please don't destructure the props directly in the components
-- please create a new component if you are repeating the same logic in multiple places
