@@ -2,7 +2,7 @@ import { emitter } from "@/lib/events/emitter";
 import { EVENTS } from "@/lib/events/constants";
 import { eventBuilder } from "@/lib/events/emitter";
 import { NextResponse } from "next/server";
-import { getRoomUsers, addUserToRoom, removeUserFromRoom } from "@/lib/cache";
+import { getRoomUsers, addUserToRoom, removeUserFromRoom } from "@/lib/db";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
@@ -38,6 +38,17 @@ export async function GET(req: Request) {
 
   // Broadcast user left event
   emitter.on(EVENTS.LEAVE_ROOM, ({ code }, username) => {
+    if (roomCode !== code) return
+
+    // Update room users cache
+    removeUserFromRoom(code, username)
+
+    // Broadcast user left event
+    writer.write(eventBuilder(EVENTS.LEAVE_ROOM, { userLeft: username, users: getRoomUsers(code) }))
+  })
+
+  // Broadcast create offer event
+  emitter.on(EVENTS.CREATE_OFFER, ({ code, offer }, username) => {
     if (roomCode !== code) return
 
     // Update room users cache
