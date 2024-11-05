@@ -7,15 +7,16 @@ type VideoTileProps = {
   videoRef: React.RefObject<HTMLVideoElement> | undefined
   isLoading?: boolean
   className?: string
+  isMe?: boolean;
 }
-export default function VideoTile({ className, username, isVideoOn = false, isAudioOn = false, videoRef, isLoading = false }: VideoTileProps) {
+export default function VideoTile({ className, username, isMe, isVideoOn = false, isAudioOn = false, videoRef, isLoading = false }: VideoTileProps) {
   return (
     <div className={`${className} bg-black overflow-hidden`}>
       {isVideoOn && (
         <video
           ref={videoRef}
+          muted={isMe}
           autoPlay
-          muted
           playsInline
           className="absolute top-0 left-0 w-full h-full object-cover" />
       )}

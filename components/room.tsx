@@ -235,15 +235,16 @@ export default function Room(props: RoomProps) {
               fullScreenClassName
           }
 
+          const isMe = participant === username;
+
           return (
             <VideoTile
               key={participant}
-              username={participant}
               videoRef={videoRefs.current[participant]}
-              // isVideoOn={participant === username ? !isVideoMuted : false}
-              // isAudioOn={participant === username ? !isAudioMuted : false}
-              isVideoOn
-              isAudioOn
+              username={participant}
+              isMe={isMe}
+              isVideoOn={isMe ? !isVideoMuted : true}
+              isAudioOn={isMe ? !isAudioMuted : true}
               className={className}
             />
           )
