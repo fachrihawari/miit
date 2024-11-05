@@ -2,6 +2,8 @@ import { FaUser, FaVideo } from 'react-icons/fa';
 import { onboarding } from '@/app/actions';
 import { TfiVideoCamera } from 'react-icons/tfi';
 
+export const dynamic = "force-dynamic";
+
 export default function Page() {
   return (
     <div className="fixed inset-0 bg-gray-100 overflow-y-auto h-full w-full flex items-center justify-center">

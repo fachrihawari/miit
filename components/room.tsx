@@ -51,7 +51,7 @@ export default function Room(props: RoomProps) {
     if (videoRefs.current[username]?.current) {
       videoRefs.current[username].current.srcObject = stream;
     }
-  }, [participants, isVideoMuted, stream])
+  }, [participants, username, isVideoMuted, stream])
 
   useEffect(() => {
     console.log({ opponent, isHost })
@@ -77,7 +77,7 @@ export default function Room(props: RoomProps) {
       videoRefs.current[opponent]!.current!.srcObject = remoteStreamRefs.current[opponent]!;
     };
 
-  }, [participants, opponent])
+  }, [participants, isHost, opponent])
 
   useEffect(() => {
     if (participants.length === 2 && !isHost) {
@@ -92,7 +92,7 @@ export default function Room(props: RoomProps) {
         sendEvent(EVENTS.CREATE_ANSWER, { code, answer });
       })()
     }
-  }, [participants, isHost])
+  }, [code, participants, isHost])
 
 
 
@@ -213,7 +213,7 @@ export default function Room(props: RoomProps) {
       eventSource.removeEventListener(EVENTS.CREATE_ANSWER, handleCreateAnswerEvent);
       eventSource.close()
     }
-  }, [code])
+  }, [code, username, isHost])
 
   const hangupCall = () => {
     stop()

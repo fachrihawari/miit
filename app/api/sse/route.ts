@@ -61,7 +61,7 @@ export async function GET(req: Request) {
   })
 
   // Broadcast create offer event
-  emitter.on(EVENTS.CREATE_OFFER, async ({ code, offer }, _username) => {
+  emitter.on(EVENTS.CREATE_OFFER, async ({ code, offer }) => {
     if (roomCode !== code) return
 
     // Update offer in room
@@ -73,7 +73,7 @@ export async function GET(req: Request) {
   })
 
   // Broadcast create answer event
-  emitter.on(EVENTS.CREATE_ANSWER, async ({ code, answer }, _username) => {
+  emitter.on(EVENTS.CREATE_ANSWER, async ({ code, answer }) => {
     if (roomCode !== code) return
 
     // Update answer in room
@@ -92,7 +92,7 @@ export async function GET(req: Request) {
 
   // FIXME: move to POST method handle
   // Broadcast offer candidate event
-  emitter.on(EVENTS.ANSWER_CANDIDATE, async ({ code, candidate }, _username) => {
+  emitter.on(EVENTS.ANSWER_CANDIDATE, async ({ code, candidate }) => {
     if (roomCode !== code) return
 
     // Update answerCandidates in room
@@ -104,7 +104,7 @@ export async function GET(req: Request) {
 
   // FIXME: move to POST method handle
   // Broadcast offer candidate event
-  emitter.on(EVENTS.OFFER_CANDIDATE, async ({ code, candidate }, _username) => {
+  emitter.on(EVENTS.OFFER_CANDIDATE, async ({ code, candidate }) => {
     if (roomCode !== code) return
 
     // Update offerCandidates in room
