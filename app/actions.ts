@@ -34,7 +34,7 @@ export async function sendEvent<T extends keyof EventMap>(name: T, data: EventMa
 }
 
 export async function createRoom() {
-  const code = nanoid(8)
+  const code = nanoid()
   cookies().set('host', code, cookieOpts)
   redirect(`/${code}`)
 }

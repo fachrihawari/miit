@@ -1,5 +1,5 @@
 import { customAlphabet } from 'nanoid'
 
-const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 16)
+const nanoid = customAlphabet('1234567890', 6)
 
 export default nanoid
