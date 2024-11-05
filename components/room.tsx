@@ -35,6 +35,7 @@ export default function Room(props: RoomProps) {
   const videoRefs = useRef<Record<string, RefObject<HTMLVideoElement> | undefined>>({})
   const remoteStreamRefs = useRef<Record<string, MediaStream | undefined>>({});
   const pcRef = useRef<RTCPeerConnection | null>(null)
+  const offerRef = useRef<RTCSessionDescriptionInit | null>(null);
 
   // Participants in the room
   const username = getCookie('username')
@@ -43,14 +44,60 @@ export default function Room(props: RoomProps) {
   const opponent = participants.find((participant) => participant !== username);
 
   // Media stream
-  const { start, stop, muteAudio, muteVideo, unmuteAudio, unmuteVideo, isStreaming, stream, isAudioMuted, isVideoMuted } = useMediaStream()
+  const { start, stop, muteAudio, muteVideo, unmuteAudio, unmuteVideo, stream, isAudioMuted, isVideoMuted } = useMediaStream()
 
-  // STEP 1: Start Media Stream & Setup Peer Connection
-  // WebRTC needs a media stream/data channel to work
+  // If user video muted, set video to current stream
   useEffect(() => {
-    // Start Media Stream
-    start()
+    if (videoRefs.current[username]?.current) {
+      videoRefs.current[username].current.srcObject = stream;
+    }
+  }, [participants, isVideoMuted, stream])
 
+  useEffect(() => {
+    console.log({ opponent, isHost })
+    console.log(participants, "<<< participants");
+    if (participants.length < 2) return
+    if (!pcRef.current) return;
+    if (!opponent) return
+
+    console.log(
+      remoteStreamRefs.current,
+      "<<< remoteStreamRefs.current"
+    );
+    console.log(
+      remoteStreamRefs.current[opponent],
+      "<<< remoteStreamRefs.current[opponent]"
+    );
+
+    // Pull tracks from remote stream, add to video stream
+    pcRef.current.ontrack = (event) => {
+      event.streams[0].getTracks().forEach((track) => {
+        remoteStreamRefs.current[opponent]!.addTrack(track);
+      });
+      videoRefs.current[opponent]!.current!.srcObject = remoteStreamRefs.current[opponent]!;
+    };
+
+  }, [participants, opponent])
+
+  useEffect(() => {
+    if (participants.length === 2 && !isHost) {
+      (async () => {
+        console.log(!!offerRef.current, "<<< offerRef");
+        // Set the remote description with the received offer
+        await pcRef.current!.setRemoteDescription(new RTCSessionDescription(offerRef.current!))
+
+        // Create an answer
+        const answer = await pcRef.current!.createAnswer()
+        await pcRef.current!.setLocalDescription(answer)
+        sendEvent(EVENTS.CREATE_ANSWER, { code, answer });
+      })()
+    }
+  }, [participants, isHost])
+
+
+
+  // STEP 2: Setup WebRTC
+  const setupRTC = (newStream: MediaStream | null) => {
     // Setup Peer Connection
     pcRef.current = new RTCPeerConnection(servers)
     pcRef.current.onicecandidate = (event) => {
@@ -64,34 +111,30 @@ export default function Room(props: RoomProps) {
       }
     }
 
-    return () => {
-      stop()
-      pcRef.current!.close()
-    }
-  }, [isHost])
-
-  // STEP 2: Add local media tracks to peer connection and join the room
-  // this is called when the media stream is available with isStreaming is true
-  useEffect(() => {
-    if (isStreaming) {
-      // If peer connection exists and we have a media stream
-      if (pcRef.current && stream) {
-        // Add each track from our local stream to the peer connection
-        stream.getTracks().forEach((track) => {
-          pcRef.current!.addTrack(track, stream)
-        })
-      }
+    // Add each track from our local stream to the peer connection
+    if (newStream) {
+      newStream!.getTracks().forEach((track) => {
+        pcRef.current!.addTrack(track, newStream)
+      })
 
       // Join current user to the room by sending a JOIN_ROOM event
       sendEvent(EVENTS.JOIN_ROOM, { code })
     }
-  }, [isStreaming]);
+  }
 
+  // STEP 1: Start Media Stream & Setup Peer Connection
+  // WebRTC needs a media stream/data channel to work
   useEffect(() => {
-    if (videoRefs.current[username]?.current) {
-      videoRefs.current[username].current.srcObject = stream;
+    // Start Media Stream
+    start()
+      .then(setupRTC)
+      .catch(console.error);
+
+    return () => {
+      stop()
+      pcRef.current!.close()
     }
-  }, [participants, isVideoMuted])
+  }, [isHost, code])
 
   // STEP 3: Setup Server-Sent Events (SSE) for real-time communication
   useEffect(() => {
@@ -104,10 +147,12 @@ export default function Room(props: RoomProps) {
     const handleJoinRoomEvent = async (event: MessageEvent) => {
       const data = JSON.parse(event.data) as JoinRoomEventData
 
-      // Create a new video reference for the joined user if it doesn't exist
-      if (!videoRefs.current[data.userJoined]?.current) {
-        videoRefs.current[data.userJoined] = createRef()
-        remoteStreamRefs.current[data.userJoined] = new MediaStream()
+      // Create a new video reference for the joined users if it doesn't exist
+      for (const user of data.users) {
+        if (!videoRefs.current[user]) {
+          videoRefs.current[user] = createRef<HTMLVideoElement>();
+          remoteStreamRefs.current[user] = new MediaStream()
+        }
       }
 
       // If the user is  a host, create and set a local offer
@@ -118,13 +163,7 @@ export default function Room(props: RoomProps) {
       }
 
       if (data.userJoined === username && !isHost) {
-        // Set the remote description with the received offer
-        await pcRef.current!.setRemoteDescription(new RTCSessionDescription(data.offer))
-
-        // Create an answer
-        const answer = await pcRef.current!.createAnswer()
-        await pcRef.current!.setLocalDescription(answer)
-        sendEvent(EVENTS.CREATE_ANSWER, { code, answer });
+        offerRef.current = data.offer;
       }
 
       // Update the list of participants
@@ -175,29 +214,6 @@ export default function Room(props: RoomProps) {
       eventSource.close()
     }
   }, [code])
-
-  useEffect(() => {
-    console.log({ opponent, isHost })
-    console.log(pcRef.current, "<<< pcRef");
-
-    if (!pcRef.current) return;
-    if (!opponent) return
-
-    // Pull tracks from remote stream, add to video stream
-    pcRef.current.ontrack = (event) => {
-      event.streams[0].getTracks().forEach((track) => {
-        console.log(videoRefs.current[opponent]?.current, "<<< videoRefs");
-        console.log(remoteStreamRefs.current[opponent], "<<< remoteRefs");
-        if (remoteStreamRefs.current[opponent]) {
-          remoteStreamRefs.current[opponent].addTrack(track);
-        }
-      });
-      if (videoRefs.current[opponent]?.current && remoteStreamRefs.current[opponent]) {
-        videoRefs.current[opponent].current!.srcObject = remoteStreamRefs.current[opponent];
-      }
-    };
-
-  }, [opponent])
 
   const hangupCall = () => {
     stop()
