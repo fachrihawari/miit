@@ -1,0 +1,26 @@
+services:
+  web:
+    build: .
+    restart: always
+    expose:
+      - ${PORT}
+    environment:
+      PORT: ${PORT}
+      NEXT_PUBLIC_BASE_URL: "https://miit.hawari.dev"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.miit.rule=Host(`miit.hawari.dev`)"
+      - "traefik.http.routers.miit.entrypoints=web"
+      - "traefik.http.services.miit.loadbalancer.server.port=${PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://localhost:${PORT}/api/heartbeat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - traefik-network
+
+networks:
+  traefik-network:
+    external: true
