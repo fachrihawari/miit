@@ -9,7 +9,7 @@ services:
       NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.miit.rule=Host(`https://miit.hawari.dev`)"
+      - "traefik.http.routers.miit.rule=Host(`miit.hawari.dev`)"
       - "traefik.http.routers.miit.entrypoints=websecure"
       - "traefik.http.routers.miit.tls.certresolver=letsencryptresolver"
       - "traefik.http.services.miit.loadbalancer.server.port=${PORT}"
