@@ -6,16 +6,17 @@ services:
       - ${PORT}
     environment:
       PORT: ${PORT}
-      NEXT_PUBLIC_BASE_URL: "https://miit.hawari.dev"
-
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.miit.rule=Host(`miit.hawari.dev`)"
-      - "traefik.http.routers.miit.entrypoints=web"
+      - "traefik.http.routers.miit.rule=Host(`$NEXT_PUBLIC_BASE_URL`)"
+      - "traefik.http.routers.miit.entrypoints=websecure"
+      - "traefik.http.routers.miit.tls.certresolver=letsencryptresolver"
       - "traefik.http.services.miit.loadbalancer.server.port=${PORT}"
     healthcheck:
       test: ["CMD-SHELL", "curl http://localhost:${PORT}/api/heartbeat"]
-      interval: 5s
+      start_period: 5s
+      interval: 3600s
       timeout: 5s
       retries: 5
     networks:
