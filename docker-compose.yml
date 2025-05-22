@@ -10,8 +10,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.miit.rule=Host(`miit.hawari.dev`)"
-      - "traefik.http.routers.miit.entrypoints=websecure"
-      - "traefik.http.routers.miit.tls.certresolver=letsencryptresolver"
+      - "traefik.http.routers.miit.entrypoints=web"
       - "traefik.http.services.miit.loadbalancer.server.port=${PORT}"
     healthcheck:
       test: ["CMD-SHELL", "curl http://localhost:${PORT}/api/heartbeat"]
